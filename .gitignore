@@ -45,3 +45,11 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# The files used in the competition. Too large!
+data_train.txt
+sample_submission.csv
+shuffle_data_test.txt
+
+# Python compiled files
+*.pyc

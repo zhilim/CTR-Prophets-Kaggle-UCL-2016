@@ -70,7 +70,7 @@ class Drone:
 	lB = []
 	leftNeighbor = 0
 	rightNeighbor = 0
-	
+
 	def __init__(self):
 		#have to reset lists otherwise the variables accumulate
 		self.pos = []
@@ -82,7 +82,7 @@ class Drone:
 			self.pos.append(random.uniform(-searchRange, searchRange))
 			self.v.append(random.uniform(-searchRange,searchRange))
 			self.pB.append(self.pos[i])
-				
+
 	def updateV(self, Best):
 		for i in range(dmn):
 			r1 = random.random()
@@ -96,10 +96,10 @@ class Drone:
 				#print "not constricted"
 				self.v[i] = w * self.v[i] + social + cognitive
 
-		
-	def updatePos(self):	
+
+	def updatePos(self):
 		self.pos = [x + y for x,y in zip(self.pos, self.v)]
-		
+
 
 
 
@@ -152,16 +152,16 @@ def particleSwarmOptimize(fitnessFunction, ringTop, reIn):
 	#for each iteration
 	for i in range(maxIterations):
 		#logging
-		
-		
+
+
 		#get global minimum result from pb results list
 		optimum = min(pbResults)
-		
+
 
 		#get the actual vector of answers
 		#solution = swarm[pbResults.index(optimum)].pB
 
-		
+
 
 		#randomize position of the global best particle to escape potential trap
 		#if reIn:
@@ -176,7 +176,7 @@ def particleSwarmOptimize(fitnessFunction, ringTop, reIn):
 		#for each drone index
 		if ringTop:
 			for k in range(population):
-			
+
 				#update and remember the local best
 				lbResult = pbResults[k]
 				lBest = swarm[k].pB
@@ -209,8 +209,8 @@ def particleSwarmOptimize(fitnessFunction, ringTop, reIn):
 			elif not ringTop:
 				#print "not ringTop"
 				swarm[d].updateV(solution)
-			
-			
+
+
 			#update position
 			swarm[d].updatePos()
 
@@ -226,7 +226,7 @@ def particleSwarmOptimize(fitnessFunction, ringTop, reIn):
 				w = w - step
 			#print "w decreased to: " + str(w)
 
-	print "Total Iterations: " + str(i+1) 
+	print "Total Iterations: " + str(i+1)
 	return solution, i, globalOpt
 
 def strengthTest(fitnessFunction, testI, ringTop, reIn, constrict):
@@ -240,7 +240,7 @@ def strengthTest(fitnessFunction, testI, ringTop, reIn, constrict):
 	global w
 	intractible = False
 	testNumber = 0
-	
+
 	logname = fitnessFunction + str(ringTop) + str(reIn) + str(constrict) + ".txt"
 	f = open(logname, 'a')
 	conclusion = ""
@@ -268,8 +268,8 @@ def strengthTest(fitnessFunction, testI, ringTop, reIn, constrict):
 		failCases = []
 		optimums = []
 		fails = 0
-		
-		
+
+
 		for test in range(testI):
 			print "w end: " + str(w)
 			w = 0.8
@@ -283,7 +283,7 @@ def strengthTest(fitnessFunction, testI, ringTop, reIn, constrict):
 				failCases.append(opt)
 			else:
 				iterations.append(i)
-			print "Optimal Solution: " + str(answer) 
+			print "Optimal Solution: " + str(answer)
 			print "Global Optimum: " + str(opt) + "\n"
 		repHeader =  "Test Report for Dimensions:" + str(dmn) + ", MaxIterations:" + str(maxIterations) + " Swarm Population:" + str(population) + "\n"
 		avgStr =  "Average Iterations for successful cases: " + str(np.mean(iterations)) + "\n"
@@ -301,14 +301,14 @@ def strengthTest(fitnessFunction, testI, ringTop, reIn, constrict):
 		report = headerStr + topoStr + reinStr + conStr + funcStr + repHeader + avgStr + avgOptStr + failStr + failRStr + conclusion
 		print report
 		f.write(report)
-		
+
 	f.write("\nTest Segment Complete\n")
 	f.close()
 
 def permutate(fit):
-	
+
 	fitFunction = fit
-	
+
 	ringTopology = "False"
 	reInitialization = "False"
 	constricted = "False"

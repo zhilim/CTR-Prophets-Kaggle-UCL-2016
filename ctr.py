@@ -1,19 +1,23 @@
-import numpy as np 
-import pandas as pd 
+import numpy as np
+import pandas as pd
 import sys
 import math
-import psotest as pso 
-import matplotlib.pyplot as plt 
+import psotest as pso
+import matplotlib.pyplot as plt
 import ast
 import random
+import ann
 
 #qds is the quantified dataset (orthogonal representation/dummy encoded)
 #selection is the features you would like to use in learning (numbers like described on kaggle description)
 #warning: no support for features that have unique instances(levels) of more than 100 (shouldnt use those anyway)
 global qds, selection
 selection = [6,10,15,17,18,20,21]
+# selection = [1,2,6,10,15,17,18,20,21]
+# selection = [1,2,6,8,9,10,15,16,17,19,20]
+# selection = [1,2,4,6,8,9,10,11,13,14,15,16,17,18,19,20,21]
 
-#loads data from file 
+#loads data from file
 #@param filename: path to file
 #@param sample: boolean as to whether or not to extract just a sample
 #@param samplesize: size of sample to extract
@@ -45,7 +49,7 @@ def getStats(dataset):
 			clicks += 1
 		for i in range(1,len(d)):
 			if d[i] not in uniqueCount[i-1]:
-				if d[0] == '1': 
+				if d[0] == '1':
 					uniqueCount[i-1][d[i]] = 1
 				else:
 					uniqueCount[i-1][d[i]] = 0
@@ -102,10 +106,11 @@ def dummify(dataset):
 	f.close()
 	realdummylist = {}
 	for i in range(len(dummylist)):
+		print len(dummylist[i])
 		if len(dummylist[i]) > 100:
 			continue
 		realdummylist[keylist[i]] = pd.get_dummies(dummylist[i].keys())
-	print realdummylist['agent']	
+	print realdummylist['agent']
 	return realdummylist
 
 #doesnt work well for large datasets, just dont use this or you will crash
@@ -121,7 +126,7 @@ def dummyFromFile():
 			continue
 		realdummylist[keylist[i]] = pd.get_dummies(dummylist[i].keys())
 	print realdummylist['agent']
-	return realdummylist	
+	return realdummylist
 
 #converts dataset to orthogonal representation
 #@dataset: the dataset
@@ -132,7 +137,7 @@ def dummyFromFile():
 def quantifyData(dataset, dummylist, testformat):
 	print "Quantifying Categorical Data.. This may take a while"
 	keydict = {1:'weekday', 2:'hour', 3:'timestamp', 4:'logtype', 5:'user', 6:'agent', 7:'ip', 8:'region', 9:'city', 10:'adex',
-	11:'domain', 12:'url', 13:'anon', 14:'slotid', 15:'width', 16:'height', 17:'vis', 
+	11:'domain', 12:'url', 13:'anon', 14:'slotid', 15:'width', 16:'height', 17:'vis',
 	18:'format', 19:'price', 20:'creative', 21:'keypage', 22:'advertId', 23:'usertags'}
 	quantified = []
 	for d in dataset:
@@ -155,7 +160,7 @@ def quantifyData(dataset, dummylist, testformat):
 				dummy = list(dummyset[level])
 				newd = newd + dummy
 		quantified.append(newd)
-	print quantified[5]
+	#print quantified[5]
 	return quantified
 
 #remember this from logistic regression?
@@ -177,7 +182,7 @@ def hypo(features, weights):
 #logistic regression cost function
 #uses global qds, so make sure that is properly initialised first
 def cost(weights):
-	sumerror = 0	
+	sumerror = 0
 	for d in qds:
 		z = 0
 		for i in range(1,len(d)):
@@ -225,9 +230,9 @@ def gdescent(lrate, iters, r):
 			intercept = w[-1] + term1
 			tempweights.append(intercept)
 			w = list(tempweights)
-		
+
 		print "Iteration: " + str(iteration) + ", cost: " + str(c)
-		print "Optimum: " + str(w)
+		#print "Optimum: " + str(w)
 		iteration += 1
 	f = open('weight.txt', 'w')
 	f.write(str(w))
@@ -255,12 +260,14 @@ def predict(weights, dataset, testformat):
 			for i in range(len(d)):
 				z += d[i] * weights[i]
 			z += weights[-1]
+
 		prob = 1/(1+math.exp(-z))
+		# print prob
 		#prob = prob * 10
 		prob = round(prob, 6)
 		line = str(iden) + "," + str(prob) + "\n"
 		f.write(line)
-		
+
 		iden += 1
 		prediction.append(prob)
 
@@ -301,13 +308,13 @@ def MCC(weights):
 	stnfp = math.sqrt(tn+fp)
 	stnfn = math.sqrt(tn+fn)
 	denom = stpfp * stpfn * stnfp * stnfn
-	num = tp*tn - fp*fn	
+	num = tp*tn - fp*fn
 	mcc = 0
 	if denom != 0:
 		mcc = float(num)/float(denom)
 	return -mcc
 
-#helper function to calculate true positive and falso positive rates	
+#helper function to calculate true positive and falso positive rates
 def accuracy(prediction, actual, tilt):
 	positives = 0
 	negatives = 0
@@ -323,6 +330,7 @@ def accuracy(prediction, actual, tilt):
 			negatives += 1
 			if prediction[i] >= tilt:
 				pred_wrong += 1
+
 	tprate = float(pred_right)/float(positives)
 	fprate = float(pred_wrong)/float(negatives)
 
@@ -347,8 +355,8 @@ def balance(ds, proportion):
 		else:
 			noclicks.append(d)
 	#random.shuffle(clicks)
+	print "Number of clicks => " + str(len(clicks))
 	random.shuffle(noclicks)
-	print len(clicks)
 	nclen = len(clicks) * proportion
 	final = clicks + noclicks[:nclen]
 	random.shuffle(final)
@@ -394,33 +402,52 @@ def AUC(x, y):
 
 
 ds = loadData('data_train.txt', False, 10000)
-#ts = loadData('shuffle_data_test.txt', False, 100)
+ts = loadData('shuffle_data_test.txt', False, 100)
 print ds[0]
+print len(ds)
 #getStats(ds)
-#bds = balance(ds, 1)
+# bds = balance(ds, 1)
+ds = balance(ds, 1)
+print "Length of balanced dataset"
+print len(ds)
 
-
+print "Dummifying"
 dum = dummify(ds)
 random.shuffle(ds)
 #dum = dummyFromFile()
 #qds = quantifyData(ds, dum)
-
-learning, testing = chunkit(ds, 10000, 1000)
+print "chunkit"
+learning, testing = chunkit(ds, 2000, 2000)
 #print len(learning), len(testing)
 
+print "Quantifying learning data with dum"
 #meta = computeMeta(ds)
 qds = quantifyData(learning, dum, False)
 #testing = ds[:200000]
+print "Quantifying testing data with dum"
 tds = quantifyData(testing, dum, False)
+td = quantifyData(ts, dum, True)
 #print len(qds[0])
 
-
 #tds = quantifyData(testing, dum)
-s, i, g = learn(10)
-#s = gdescent(0.1,40,10)
-#s = loadWeights()
-prediction = predict(s, tds, False)
+# s, i, g = learn(10)
+print "Doing gradient descent..."
+#s = gdescent(0.1, 20, 6)
+print "ANN"
+# s = ann.ann(qds, 0.005, 8000)
+# s = ann.ann(qds, 0.008, 12000)
+s = ann.ann(qds, 0.01, 10000)
+#print "Resulting weights of the gradient descent"
+#print s
+# s = loadWeights()
+print "Before doing prediction"
+prediction = ann.predict(tds, False)
+#prediction = predict(s,tds, False)
 #prediction = loadPrediction()
-#print accuracy(prediction, testing, 0.5)
+print accuracy(prediction, testing, 0.5)
+print "Printing ROC"
 x,y = plotROC(prediction, testing)
+print "AUC"
 print AUC(x, y)
+
+prediction = ann.predict(td, True)
